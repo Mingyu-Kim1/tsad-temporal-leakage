@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the article below."
+title: "tsad-temporal-leakage"
+authors:
+  - family-names: Kim
+    given-names: Mingyu
+  - family-names: Song
+    given-names: Seunghwan
+preferred-citation:
+  type: article
+  title: "Adaptation–evaluation temporal leakage in cross-domain time-series anomaly detection: Reassessing contamination robustness and adaptation strategies for fleet condition monitoring"
+  authors:
+    - family-names: Kim
+      given-names: Mingyu
+    - family-names: Song
+      given-names: Seunghwan
+  journal: "Reliability Engineering & System Safety"
+  status: submitted
+  year: 2026
