@@ -1,0 +1,13 @@
+﻿metric,method,pair,contam
+auroc,full_ft,Boiler_3to2,0.05
+auroc,full_ft,Boiler_3to2,0.1
+auroc,full_ft,Boiler_3to2,0.2
+auroc,full_ft,Boiler_3to2,0.4
+auroc_nopool_exact,full_ft,Boiler_3to2,0.05
+auroc_nopool_exact,full_ft,Boiler_3to2,0.1
+auroc_nopool_exact,full_ft,Boiler_3to2,0.2
+auroc_nopool_exact,full_ft,Boiler_3to2,0.4
+auroc_nopool_temporal,full_ft,Boiler_3to2,0.05
+auroc_nopool_temporal,full_ft,Boiler_3to2,0.1
+auroc_nopool_temporal,full_ft,Boiler_3to2,0.2
+auroc_nopool_temporal,full_ft,Boiler_3to2,0.4

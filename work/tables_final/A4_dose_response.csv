@@ -1,0 +1,9 @@
+﻿method,dose,n,spearman,p
+adapter_isca,frac_win_leaked,23,-0.10867154846984156,0.6216080333312333
+adapter_isca,frac_pos_leaked,23,-0.13765062806179934,0.5310999443553758
+adapter_latent,frac_win_leaked,23,-0.10142677857185214,0.6451644209101993
+adapter_latent,frac_pos_leaked,23,-0.12626598965067307,0.5659091161985742
+full_ft,frac_win_leaked,22,0.0005953643577650902,0.9979019733368871
+full_ft,frac_pos_leaked,22,0.0005953643577650902,0.9979019733368871
+source_only,frac_win_leaked,23,,
+source_only,frac_pos_leaked,23,,

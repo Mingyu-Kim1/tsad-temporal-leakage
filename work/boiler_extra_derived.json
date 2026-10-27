@@ -1,0 +1,17 @@
+{
+  "Boiler_1to3": {
+    "kind": "boiler",
+    "src": "1",
+    "tgt": "3"
+  },
+  "Boiler_2to1": {
+    "kind": "boiler",
+    "src": "2",
+    "tgt": "1"
+  },
+  "Boiler_3to2": {
+    "kind": "boiler",
+    "src": "3",
+    "tgt": "2"
+  }
+}

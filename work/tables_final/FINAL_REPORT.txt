@@ -1,0 +1,147 @@
+[load] .\results_rescored.csv: 4162행, stage={'S2': 2128, 'S1': 1140, 'SW': 520, 'S4': 252, 'S5': 122}
+[fill] 제거율 0 pair 7개, 606 cell 을 원 지표로 채움
+
+===== A1 누수 감사 =====
+          pair dataset  n_eval  frac_win_leaked  frac_pos_leaked  pos_kept  neg_kept  evaluable
+   Boiler_1to2  Boiler   88291           0.8009           0.6403      1082     16499       True
+   Boiler_1to3  Boiler   89540           0.2002           0.8485      1448     70167       True
+   Boiler_2to1  Boiler   90021           0.8009           0.9123       878     17048       True
+   Boiler_2to3  Boiler   89540           0.2002           0.8485      1448     70167       True
+   Boiler_3to1  Boiler   90021           0.8009           0.9123       878     17048       True
+   Boiler_3to2  Boiler   88291           0.8009           0.6403      1082     16499       True
+  MSL_G-6toE-1     MSL    8417           0.0947           0.3272       475      7145       True
+ MSL_G-6toE-13     MSL    8541           0.0000           0.0000       561      7980       True
+MSL_P-10toP-11     MSL    3436           0.0000           0.0000       426      3010       True
+MSL_P-11toP-10     MSL    6001           0.0000           0.0000       230      5771       True
+      PB1toPB2   field    5326           1.0000           1.0000         0         0      False
+      PB1toXB1   field     475           1.0000           1.0000         0         0      False
+      PB2toPB1   field   13200           1.0000           1.0000         0         0      False
+      PB2toXB2   field    1547           1.0000           1.0000         0         0      False
+  SMD_1-1to1-2     SMD   23595           0.0000           0.0000      1532     22063       True
+  SMD_1-2to1-1     SMD   28380           0.0000           0.0000      3486     24894       True
+  SMD_2-1to2-2     SMD   23601           0.0000           0.0000      3922     19679       True
+  SMD_3-1to3-2     SMD   23604           0.0000           0.0000      2018     21586       True
+      Sim2Real   field    2581           1.0000           1.0000         0         0      False
+      XB1toPB1   field   13200           1.0000           1.0000         0         0      False
+      XB1toXB2   field    1547           1.0000           1.0000         0         0      False
+      XB2toPB2   field    5326           1.0000           1.0000         0         0      False
+      XB2toXB1   field     475           1.0000           1.0000         0         0      False
+
+총 23 pair | 시간중복 있음 16 | 평가 가능 14 | 평가 불가 9
+
+===== A2 negative control : 데이터셋별 오염 기울기 (0→20%) =====
+
+[auroc]
+dataset         Boiler     MSL     SMD   field
+method                                        
+adapter_isca   -0.0649  0.0077  0.0035  0.0002
+adapter_latent -0.1066  0.0001  0.0045 -0.0041
+full_ft        -0.3101 -0.0073 -0.0284 -0.0877
+source_only     0.0000  0.0000  0.0000  0.0000
+
+[auroc_nopool_exact]
+dataset         Boiler     MSL     SMD   field
+method                                        
+adapter_isca   -0.0621  0.0081  0.0035  0.0002
+adapter_latent -0.1021  0.0001  0.0045 -0.0032
+full_ft        -0.2994 -0.0076 -0.0284 -0.0876
+source_only     0.0000  0.0000  0.0000  0.0000
+
+[auroc_nopool_temporal]
+dataset         Boiler     MSL     SMD
+method                                
+adapter_isca    0.0077  0.0097  0.0035
+adapter_latent  0.0134  0.0001  0.0045
+full_ft         0.0000 -0.0077 -0.0284
+source_only     0.0000  0.0000  0.0000
+
+===== A3 split 조건 통일 (rho 5→40, 전 구간 동일 순열 split) =====
+metric           auroc  auroc_nopool_exact  auroc_nopool_temporal
+method                                                           
+adapter_isca   -0.0536             -0.0526                 0.0025
+adapter_latent -0.0550             -0.0537                -0.0024
+full_ft        -0.0546             -0.0528                -0.0061
+source_only     0.0000              0.0000                 0.0000
+
+===== A4 용량-반응 상관 (★음성 결과 — 논문에 negative result 로 보고) =====
+        method            dose  n  spearman      p
+  adapter_isca frac_win_leaked 23   -0.1087 0.6216
+  adapter_isca frac_pos_leaked 23   -0.1377 0.5311
+adapter_latent frac_win_leaked 23   -0.1014 0.6452
+adapter_latent frac_pos_leaked 23   -0.1263 0.5659
+       full_ft frac_win_leaked 22    0.0006 0.9979
+       full_ft frac_pos_leaked 22    0.0006 0.9979
+   source_only frac_win_leaked 23       NaN    NaN
+   source_only frac_pos_leaked 23       NaN    NaN
+  해석: pair 간 이질성(이상 기저율 0.6~67%, window 20/100, pool 13~13,738)이 커
+        cross-pair 상관은 검정력이 없다. 메커니즘 근거는 pair 내 IN/OUT 분해다.
+
+===== A5 threshold 의존 지표 (평가가능 pair) =====
+           metric         method  n_pairs    mean  median  wins  losses   worst   ci_lo  ci_hi      p
+      aupr_nopool  adapter_input       10  0.0048  0.0041     7       2 -0.0017  0.0015 0.0089 0.0273
+      aupr_nopool   adapter_isca       10  0.0096  0.0066     8       1 -0.0032  0.0035 0.0171 0.0137
+      aupr_nopool adapter_latent       10  0.0141  0.0089     8       2 -0.0031  0.0055 0.0240 0.0195
+      aupr_nopool adapter_output       10  0.0201  0.0140     8       2 -0.0019  0.0065 0.0408 0.0098
+      aupr_nopool        full_ft       10  0.0570  0.0571     8       2 -0.0030  0.0312 0.0825 0.0098
+             aupr  adapter_input       14  0.0060  0.0052    11       2 -0.0017  0.0030 0.0094 0.0017
+             aupr   adapter_isca       14  0.0085  0.0059    11       2 -0.0212  0.0011 0.0159 0.0245
+             aupr adapter_latent       14  0.0157  0.0086    11       3 -0.0270  0.0030 0.0301 0.0245
+             aupr adapter_output       14  0.0223  0.0145    10       4 -0.1444 -0.0208 0.0704 0.1189
+             aupr        full_ft       14  0.0616  0.0642    10       4 -0.1132  0.0157 0.1133 0.0295
+f1_far0.01_nopool  adapter_input       10  0.0039  0.0003     5       3 -0.0025 -0.0001 0.0105 0.2031
+f1_far0.01_nopool   adapter_isca       10 -0.0001  0.0000     4       4 -0.0063 -0.0023 0.0025 0.8203
+f1_far0.01_nopool adapter_latent       10  0.0089  0.0020     6       2 -0.0060  0.0002 0.0217 0.1094
+f1_far0.01_nopool adapter_output       10  0.0124  0.0026     8       1 -0.0026  0.0013 0.0315 0.0273
+f1_far0.01_nopool        full_ft       10  0.0395  0.0346     9       1 -0.0152  0.0179 0.0623 0.0137
+       f1_far0.01  adapter_input       14  0.0033  0.0001     7       2 -0.0025  0.0001 0.0086 0.0844
+       f1_far0.01   adapter_isca       14 -0.0042 -0.0000     5       6 -0.0561 -0.0131 0.0014 0.3078
+       f1_far0.01 adapter_latent       14  0.0070  0.0003     8       3 -0.0462 -0.0059 0.0208 0.1549
+       f1_far0.01 adapter_output       14  0.0317  0.0025    10       2 -0.0617 -0.0017 0.0734 0.0414
+       f1_far0.01        full_ft       14  0.0509  0.0354    11       2 -0.0407  0.0180 0.0913 0.0131
+        aupr_lift  adapter_input       14  0.0954  0.0520    11       2 -0.0257  0.0319 0.1920 0.0017
+        aupr_lift   adapter_isca       14  0.1139  0.0655    11       3 -0.1278  0.0371 0.1926 0.0166
+        aupr_lift adapter_latent       14  0.2323  0.0900    11       3 -0.1625  0.0666 0.4339 0.0134
+        aupr_lift adapter_output       14  0.2479  0.2026    10       4 -0.9608 -0.1130 0.6463 0.1040
+        aupr_lift        full_ft       14  0.7422  0.8553    10       4 -0.6815  0.3255 1.1772 0.0067
+
+===== A6 외부 baseline 비교 (temporal, 7 pair) =====
+method          source_only  adapter_latent  full_ft  tranad    usad
+pair                                                                
+MSL_G-6toE-13        0.5423          0.5421   0.5305  0.5141  0.5010
+MSL_P-10toP-11       0.7524          0.7524   0.8187  0.5486  0.8369
+MSL_P-11toP-10       0.8111          0.8113   0.8110  0.8721  0.9549
+SMD_1-1to1-2         0.5617          0.5712   0.8082  0.8208  0.9007
+SMD_1-2to1-1         0.5740          0.7592   0.9495  0.9425  0.9643
+SMD_2-1to2-2         0.8313          0.8225   0.7275  0.7064  0.6592
+SMD_3-1to3-2         0.6775          0.6794   0.6221  0.5634  0.5652
+MEAN                 0.6786          0.7054   0.7525  0.7097  0.7689
+WORST                0.5423          0.5421   0.5305  0.5141  0.5010
+  ※ TranAD/USAD 는 설비마다 모델 전체를 학습·저장한다.
+     표에 trainable params 와 storage 를 반드시 병기할 것.
+
+===== A7 주 결과 (temporal) =====
+        method  n_pairs   mean  median   ci_lo  ci_hi  wins  ties  losses   worst  total_loss      p
+ adapter_input       14 0.0097  0.0058  0.0039 0.0167    10     3       1 -0.0028     -0.0028 0.0067
+  adapter_isca       14 0.0302  0.0106  0.0119 0.0505    10     1       3 -0.0018     -0.0032 0.0085
+adapter_latent       14 0.0370  0.0109  0.0121 0.0679    11     1       2 -0.0088     -0.0091 0.0040
+adapter_output       14 0.0321  0.0364 -0.0503 0.1119    10     0       4 -0.3481     -0.4965 0.1353
+       full_ft       14 0.0965  0.0613  0.0268 0.1722    10     0       4 -0.1037     -0.1710 0.0245
+[fill] 제거율 0 pair 7개, 606 cell 을 원 지표로 채움
+[fill] 제거율 0 pair 7개, 762 cell 을 원 지표로 채움
+[fill] 제거율 0 pair 7개, 762 cell 을 원 지표로 채움
+
+===== A8 purge gap 민감도 =====
+                    file  gap_mult                        method  n_pairs  n_eval_kept    mean  median  wins  losses   worst  ci_lo  ci_hi      p
+    results_rescored.csv       NaN                adapter_latent       14     339022.0  0.0370  0.0109  11.0     2.0 -0.0088 0.0121 0.0679 0.0040
+    results_rescored.csv       NaN                       full_ft       14     339022.0  0.0965  0.0613  10.0     4.0 -0.1037 0.0268 0.1722 0.0245
+    results_rescored.csv       NaN adapter_latent (contam 0→20%)       14          NaN  0.0071  0.0008   NaN     NaN     NaN    NaN    NaN    NaN
+    results_rescored.csv       NaN        full_ft (contam 0→20%)       13          NaN -0.0111 -0.0010   NaN     NaN     NaN    NaN    NaN    NaN
+results_rescored_g2L.csv       2.0                adapter_latent       14     337822.0  0.0348  0.0108  11.0     2.0 -0.0088 0.0113 0.0647 0.0052
+results_rescored_g2L.csv       2.0                       full_ft       14     337822.0  0.0907  0.0609  10.0     4.0 -0.1037 0.0249 0.1622 0.0245
+results_rescored_g2L.csv       2.0 adapter_latent (contam 0→20%)       14          NaN  0.0071  0.0008   NaN     NaN     NaN    NaN    NaN    NaN
+results_rescored_g2L.csv       2.0        full_ft (contam 0→20%)       13          NaN -0.0109 -0.0010   NaN     NaN     NaN    NaN    NaN    NaN
+results_rescored_g5L.csv       5.0                adapter_latent       14     334296.0  0.0284  0.0088  10.0     3.0 -0.0088 0.0062 0.0586 0.0245
+results_rescored_g5L.csv       5.0                       full_ft       14     334296.0  0.0642  0.0361   9.0     5.0 -0.1037 0.0003 0.1359 0.1040
+results_rescored_g5L.csv       5.0 adapter_latent (contam 0→20%)       14          NaN  0.0068  0.0008   NaN     NaN     NaN    NaN    NaN    NaN
+results_rescored_g5L.csv       5.0        full_ft (contam 0→20%)       13          NaN -0.0108 -0.0015   NaN     NaN     NaN    NaN    NaN    NaN
+  판정: gap 을 키워도 부호·유의성이 유지되면 결론은 gap 선택에 둔감하다.
