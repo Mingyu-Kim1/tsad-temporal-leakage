@@ -1,8 +1,8 @@
-   __pycache__/
-   *.pyc
-   *.pt
-   *.npz
-   work/data/*
-   !work/data/README.md
-   work/leakfix_masks.npz
-   .venv/
+__pycache__/
+*.pyc
+*.pt
+*.npz
+work/data/*
+!work/data/README.md
+work/leakfix_masks.npz
+.venv/
