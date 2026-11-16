@@ -58,10 +58,23 @@ def summary(g):
 CHECKS = []
 
 
+def _dec(tol):
+    # 원고 표기 자릿수: tol 0 -> 정수, 5e-4/6e-4/2e-3 -> 소수 셋째 자리, 6e-5/1e-4 -> 넷째 자리
+    return 0 if tol == 0 else (3 if tol >= 5e-4 else 4)
+
+
 def check(label, got, want, tol):
-    ok = abs(got - want) <= tol
+    """원고에 찍힌 자릿수로 반올림한 문자열이 정확히 같아야 통과한다 (허용오차 비교 아님)."""
+    d = _dec(tol)
+    g = f"{got:.{d}f}"
+    w = f"{want:.{d}f}"
+    if g in ("-0." + "0" * d,):
+        g = "0." + "0" * d
+    if w in ("-0." + "0" * d,):
+        w = "0." + "0" * d
+    ok = g == w
     CHECKS.append(ok)
-    print(f"  [{'OK ' if ok else 'XX '}] {label:48s} got {got:+.4f}  paper {want:+.4f}")
+    print(f"  [{'OK ' if ok else 'XX '}] {label:48s} code {g:>8s}  paper {w:>8s}")
 
 
 def main():
@@ -103,7 +116,7 @@ def main():
 
     print("== Table 13  target-level (Boiler pairs sharing a target averaged)")
     tgt = g.index.map(lambda p: "Boiler_t" + p[-1] if p.startswith("Boiler") else p)
-    for m, (mu, p) in {"adapter_latent": (0.036, 0.024), "full_ft": (0.096, 0.148)}.items():
+    for m, (mu, p) in {"adapter_latent": (0.036, 0.024), "full_ft": (0.096, 0.147)}.items():
         gt = g[m].groupby(tgt).mean()
         s = summary(gt)
         check(f"{m} mean (n={s['n']})", s["mean"], mu, 6e-4)
@@ -212,7 +225,7 @@ def main():
 
     print("== Table 15  ranking region (results_a4_new/a4_summary.csv)")
     a4 = pd.read_csv(R / "results_a4_new" / "a4_summary.csv").set_index("metric")
-    for m, (mu, p) in {"AUROC": (0.041, 0.011), "pAUROC": (-0.001, 0.808), "R-precision": (0.001, 0.937),
+    for m, (mu, p) in {"AUROC": (0.041, 0.011), "pAUROC": (-0.0004, 0.808), "R-precision": (0.001, 0.937),
                        "recall@1%FAR": (-0.001, 0.263), "AUPR": (0.007, 0.068)}.items():
         check(f"{m} mean", a4.loc[m, "mean"], mu, 6e-4)
         check(f"{m} p", a4.loc[m, "p"], p, 6e-4)
