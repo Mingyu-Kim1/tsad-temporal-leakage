@@ -175,11 +175,14 @@ def main():
         check(f"{m} {col} rho=0", x[0.0], w0, 6e-4)
         check(f"{m} {col} rho=40", x[0.4], w4, 6e-4)
 
-    print("== Table 6  same split, rho 5 -> 40 (A3)")
-    a3 = pd.read_csv(R / "tables_final" / "A3_split_controlled.csv").set_index(["metric", "method"])
-    for (metric, m), w in {("auroc", "adapter_latent"): -0.055, ("auroc_nopool_temporal", "adapter_latent"): -0.003,
-                           ("auroc_nopool_temporal", "adapter_isca"): 0.003, ("auroc_nopool_temporal", "full_ft"): -0.006}.items():
-        check(f"{metric} {m}", a3.loc[(metric, m), "delta_5_to_40"], w, 6e-4)
+    print("== Table 6  same split, rho 5 -> 40, Boiler 6 pairs (same pair set as Table 7)")
+    s2 = pd.read_csv(R / "results_rescored_clean.csv", low_memory=False)
+    s2 = s2[(s2.stage == "S2") & s2.pair.str.startswith("Boiler")].copy()
+    for (col, m), w in {("auroc", "adapter_latent"): -0.088, ("auroc", "adapter_isca"): -0.072, ("auroc", "full_ft"): -0.118,
+                        ("auroc_nopool_exact", "full_ft"): -0.112, ("auroc_nopool_temporal", "adapter_latent"): 0.002,
+                        ("auroc_nopool_temporal", "adapter_isca"): 0.001, ("auroc_nopool_temporal", "full_ft"): -0.010}.items():
+        x = s2[s2.method == m].groupby(["pair", "contam"])[col].mean().unstack()[[0.05, 0.4]].dropna()
+        check(f"{col} {m}", (x[0.4] - x[0.05]).mean(), w, 6e-4)
 
     print("== Table 10  capacity ladder (tables_final/R3, sweep)")
     r3 = pd.read_csv(R / "tables_final" / "R3_pareto_report.csv")
