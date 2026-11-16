@@ -21,6 +21,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
+import sys  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from clean_rows import attach_inout  # noqa: E402
 
 FIELD = ("PB", "XB", "Sim")
 NICE = {"source_only": "No adaptation", "adapter_latent": "Adapter (latent, 1%)",
@@ -40,8 +43,10 @@ def e2(d: pd.DataFrame) -> pd.Series:
 
 
 def fig3(out):
-    m = pd.read_csv("mechanism_merged.csv", low_memory=False)
+    # v9: S2 정리본(code/clean_rows.py)에 dump 단위 IN/OUT 을 붙여 쓴다
+    m = pd.read_csv("results_rescored_clean.csv", low_memory=False)
     m = m[m.pair.str.startswith("Boiler") & (m.stage == "S2")]
+    m = attach_inout(m, pd.read_csv("mechanism_rows.csv"))
     fig, ax = plt.subplots(1, 2, figsize=(7.2, 2.8))
     for meth in CURVE:
         g = m[m.method == meth].groupby("contam")
@@ -57,7 +62,7 @@ def fig3(out):
 
 
 def fig4(out):
-    d = pd.read_csv("results_rescored.csv", low_memory=False)
+    d = pd.read_csv("results_rescored_clean.csv", low_memory=False)   # v9: S2 정리본
     d = d[(d.stage == "S2") & ~d.pair.str.startswith(FIELD)].copy()
     d["m"] = e2(d)
     per = d.pivot_table(index="pair", columns=["method", "contam"], values="m", aggfunc="mean")

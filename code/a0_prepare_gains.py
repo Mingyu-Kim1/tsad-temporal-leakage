@@ -50,6 +50,8 @@ def main():
     ap.add_argument("--family", default=None, help="예: bench")
     ap.add_argument("--keep-diverged", action="store_true")
     ap.add_argument("--keep-nonevaluable", action="store_true")
+    ap.add_argument("--no-fill-zero-overlap", action="store_true",
+                    help="(기본: 채움) 제거율 0 인 pair 에서 E2 가 비어 있으면 auroc 로 채운다 (README 규약)")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--diagnose", action="store_true",
                     help="필터를 하나씩 적용하며 남는 행 수를 보여 준다")
@@ -98,6 +100,18 @@ def main():
         if not a.strict:
             m = m | df[col].isna() | (v == "") | (v.str.lower() == "nan")
         keep(m, f"{col} == {val}" + ("" if a.strict else " (빈 값 포함)"))
+
+    # README 규약: 시간 구간 제거율이 0 인 pair 는 E2 == E0 이므로, dump 가 없어 E2 가 비어 있으면 auroc 로 채운다.
+    if (not a.no_fill_zero_overlap and metric == "auroc_nopool_temporal"
+            and "frac_removed_temporal" in cols and "auroc" in cols):
+        fr = pd.to_numeric(df["frac_removed_temporal"], errors="coerce")
+        zero = fr.groupby(df["pair"]).transform("max").fillna(0) == 0
+        nan = pd.to_numeric(df[metric], errors="coerce").isna()
+        fill = zero & nan & df["pair"].astype(str).str.match(r"(SMD|MSL|SMAP)")
+        df.loc[fill, metric] = df.loc[fill, "auroc"]
+        if "evaluable_temporal" in cols:
+            df.loc[fill, "evaluable_temporal"] = True
+        print(f"[규약] 제거율 0 pair 의 빈 E2 {int(fill.sum())}행을 auroc 로 채움")
 
     eqfilter("stage", a.stage)
     eqfilter("mode", a.mode)

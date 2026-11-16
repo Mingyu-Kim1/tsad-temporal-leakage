@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """verify_paper_numbers.py
-논문(RESS 투고본 v3) 핵심 수치를 저장된 결과 CSV에서 다시 계산해 대조한다.
+논문(RESS 원고 v9) 핵심 수치를 저장된 결과 CSV에서 다시 계산해 대조한다.
 재학습 없음. GPU 불필요.
 
 실행 (저장소 루트에서):
@@ -15,12 +15,18 @@
      Full FT 평균이 +0.093 -> +0.096 으로 바뀐다.)
   - seed 평균 -> pair 평균 -> source_only 대비 차이 -> pair 단위 Wilcoxon
   - |gain| <= 1e-4 는 tie
+  - S2(오염 곡선) 수치는 smoke/중복 행을 정리한 results_rescored_clean.csv 로 계산한다
+    (code/clean_rows.py). 원고 v8 투고본의 S2 수치는 정리 전 파일 기준이었다
+    (work/tables_final/v8_submitted/).
 """
 import argparse
 from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "code"))
+from clean_rows import attach_inout  # noqa: E402
 
 FIELD = ("PB", "XB", "Sim")
 METHODS = ["adapter_input", "adapter_latent", "adapter_isca", "adapter_output", "full_ft"]
@@ -117,15 +123,15 @@ def main():
         check(f"{f} latent", gg["adapter_latent"].mean(), w[0], 6e-4)
         check(f"{f} full_ft", gg["full_ft"].mean(), w[1], 6e-4)
 
-    print("== Table 5 / 7  contamination slope rho 0->20 (5 seeds, tables_final/A2)")
+    print("== Table 5 / 7  contamination slope rho 0->20 (S2, 3 seeds, cleaned, tables_final/A2)")
     a2 = pd.read_csv(R / "tables_final" / "A2_negative_control.csv")
     def slope(metric, method, ds):
         r = a2[(a2.metric == metric) & (a2.method == method) & (a2.dataset == ds)]
         return float(r.delta_0_to_20.iloc[0])
     for metric, method, ds, want in [
-            ("auroc", "full_ft", "Boiler", -0.310), ("auroc_nopool_exact", "full_ft", "Boiler", -0.299),
-            ("auroc_nopool_temporal", "full_ft", "Boiler", 0.000), ("auroc", "adapter_latent", "Boiler", -0.107),
-            ("auroc_nopool_exact", "adapter_latent", "Boiler", -0.102), ("auroc_nopool_temporal", "adapter_latent", "Boiler", 0.013),
+            ("auroc", "full_ft", "Boiler", -0.312), ("auroc_nopool_exact", "full_ft", "Boiler", -0.301),
+            ("auroc_nopool_temporal", "full_ft", "Boiler", -0.002), ("auroc", "adapter_latent", "Boiler", -0.107),
+            ("auroc_nopool_exact", "adapter_latent", "Boiler", -0.102), ("auroc_nopool_temporal", "adapter_latent", "Boiler", 0.012),
             ("auroc", "full_ft", "SMD", -0.028), ("auroc", "full_ft", "MSL", -0.007)]:
         check(f"slope {metric} {method} {ds}", slope(metric, method, ds), want, 6e-4)
 
@@ -157,12 +163,13 @@ def main():
     check("MSL_G-6toE-1 leaked anomaly (32.7%)", a1.loc["MSL_G-6toE-1", "frac_pos_leaked"], 0.327, 6e-4)
 
     print("== Table 4  IN/OUT, Boiler 6, rho 0 -> 40 (cell-level means, S2)")
-    mm = pd.read_csv(R / "mechanism_merged.csv", low_memory=False)
+    mm = pd.read_csv(R / "results_rescored_clean.csv", low_memory=False)
     mm = mm[mm.pair.str.startswith("Boiler") & (mm.stage == "S2")]
-    t4 = {("adapter_latent", "auroc_in"): (0.706, 0.550), ("full_ft", "auroc_in"): (0.804, 0.440),
-          ("adapter_isca", "auroc_in"): (0.689, 0.577), ("source_only", "auroc_in"): (0.590, 0.590),
-          ("adapter_latent", "auroc_out"): (0.541, 0.555), ("full_ft", "auroc_out"): (0.587, 0.562),
-          ("source_only", "auroc_out"): (0.507, 0.507)}
+    mm = attach_inout(mm, pd.read_csv(R / "mechanism_rows.csv"))
+    t4 = {("adapter_latent", "auroc_in"): (0.716, 0.555), ("full_ft", "auroc_in"): (0.801, 0.443),
+          ("adapter_isca", "auroc_in"): (0.698, 0.584), ("source_only", "auroc_in"): (0.599, 0.599),
+          ("adapter_latent", "auroc_out"): (0.540, 0.553), ("full_ft", "auroc_out"): (0.585, 0.552),
+          ("source_only", "auroc_out"): (0.500, 0.500)}
     for (m, col), (w0, w4) in t4.items():
         x = mm[mm.method == m].groupby("contam")[col].mean()
         check(f"{m} {col} rho=0", x[0.0], w0, 6e-4)
@@ -170,7 +177,7 @@ def main():
 
     print("== Table 6  same split, rho 5 -> 40 (A3)")
     a3 = pd.read_csv(R / "tables_final" / "A3_split_controlled.csv").set_index(["metric", "method"])
-    for (metric, m), w in {("auroc", "adapter_latent"): -0.055, ("auroc_nopool_temporal", "adapter_latent"): -0.002,
+    for (metric, m), w in {("auroc", "adapter_latent"): -0.055, ("auroc_nopool_temporal", "adapter_latent"): -0.003,
                            ("auroc_nopool_temporal", "adapter_isca"): 0.003, ("auroc_nopool_temporal", "full_ft"): -0.006}.items():
         check(f"{metric} {m}", a3.loc[(metric, m), "delta_5_to_40"], w, 6e-4)
 
@@ -191,8 +198,9 @@ def main():
         check(f"{m} mean", a6.loc["MEAN", m], mu, 6e-4)
         check(f"{m} worst", a6.loc["WORST", m], wo, 6e-4)
 
-    print("== Table 12  5-seed row (work/results_rescored.csv)")
-    g5, _ = pair_gain(load(R / "results_rescored.csv"), "auroc_nopool_temporal")
+    print("== Table 12  5-seed row (core_results_seed15, seeds 0-4)")
+    d5 = load(s15 / "results_rescored.csv")
+    g5, _ = pair_gain(d5[d5.seed <= 4].copy(), "auroc_nopool_temporal")
     for m, (mu, wo, p) in {"adapter_latent": (0.037, -0.009, 0.004), "full_ft": (0.096, -0.104, 0.025)}.items():
         s = summary(g5[m])
         check(f"{m} mean", s["mean"], mu, 6e-4)

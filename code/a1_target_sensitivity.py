@@ -45,7 +45,7 @@ def infer_target(pair: str) -> str:
     return f"{ds}_{m2.group('tgt')}" if m2 else f"{ds}_{rest}"
 
 
-def wtl(x, tol=1e-12):
+def wtl(x, tol=1e-4):  # 논문 규약: |Δ| ≤ 1e-4 는 동률
     x = np.asarray(x, float)
     return int((x > tol).sum()), int((np.abs(x) <= tol).sum()), int((x < -tol).sum())
 

@@ -22,7 +22,7 @@ Leakage-controlled adaptation gain, E2(0), 14 scorable pairs x 15 seeds (Table 8
 | Adapter (output) | 357–3,607 | +0.032 | 10 / 0 / 4 | −0.352 | 0.153 |
 | Full fine-tuning | 813,593–852,243 | +0.093 | 10 / 1 / 3 | −0.102 | 0.035 |
 
-Leakage audit (Table 3): adaptation and evaluation windows share time spans in 16 of 23 pairs; in 9 pairs no scorable windows remain after control. The 0.310 AUROC contamination loss of full fine-tuning on Boiler (E0) is not observed under time-span control (E2).
+Leakage audit (Table 3): adaptation and evaluation windows share time spans in 16 of 23 pairs; in 9 pairs no scorable windows remain after control. The 0.312 AUROC contamination loss of full fine-tuning on Boiler (E0) is not observed under time-span control (E2).
 
 ## Quick start
 
@@ -69,15 +69,24 @@ python run.py preprocess_xjtu_sy.py
 python run.py final_20_run.py --plan            # list the jobs
 python run.py --kmp final_20_run.py --all       # experiments (--kmp: Windows OpenMP workaround)
 python run.py final_35_rescore.py --gap-mult 1  # E1 / E2 rescoring (2 -> g = L, 5 -> g = 4L)
-python run.py final_95_final_analysis.py        # tables A1–A8
+python code/clean_rows.py                       # drop smoke / duplicate S2 rows -> results_rescored*_clean.csv
+python run.py final_95_final_analysis.py --results results_rescored_clean.csv   # tables A1–A8
 python run.py make_paper_figures.py             # Fig. 3–7 from the stored results
+```
+
+Adaptation gains (Tables 8, 13, 14) from the 15-seed results:
+
+```bash
+python run.py a0_prepare_gains.py --results core_results_seed15/results_rescored.csv --out gains.csv --stage S1
+python run.py a1_target_sensitivity.py --gains gains.csv --out a1_out      # Table 8 CI, Table 13
+python run.py a2_detector_valid_subset.py --gains gains.csv --out a2_out   # Table 14
 ```
 
 | Paper | Script (`code/`) | Stored result (`work/`) |
 |---|---|---|
 | Table 3, A.1 (leakage audit) | `final_95_final_analysis.py`, `leakage_audit/` | `tables_final/A1_leakage_audit.csv`, `rescore_summary.csv` |
-| Table 4, Fig. 3 (IN/OUT) | `final_45_leakage_mechanism.py`, `final_80_figures.py` | `mechanism_merged.csv` |
-| Table 5, 6, 7 (slopes) | `final_95_final_analysis.py` | `tables_final/A2_*.csv`, `A3_*.csv` |
+| Table 4, Fig. 3 (IN/OUT) | `final_45_leakage_mechanism.py`, `clean_rows.py` | `mechanism_rows.csv` joined to `results_rescored_clean.csv` |
+| Table 5, 6, 7 (slopes) | `clean_rows.py`, `final_95_final_analysis.py` | `tables_final/A2_*.csv`, `A3_*.csv` (from `results_rescored_clean.csv`) |
 | Table 7–9, 12–14 (gains) | `final_35_rescore.py`, `a0`–`a2_*.py`, `seed_expansion_full.py` | `core_results_seed15/` |
 | Table 10, Fig. 6 (capacity) | `final_70_sweep.py`, `final_90_reliability.py` | `tables_final/R3_pareto_report.csv` |
 | Table 11 (TranAD, USAD) | `run_all_xjtu_fixed.py` (stage S5), `tranad_model.py`, `final_95_final_analysis.py` | `tables_final/A6_external_baseline.csv` |
@@ -93,7 +102,15 @@ python run.py make_paper_figures.py             # Fig. 3–7 from the stored res
 - Seeds: S1 (main results) 0–14; S2 contamination curves, S5 external methods and the capacity sweep 0–2 (`code/paths.py`).
 - `results_rescored_g2L.csv` / `_g5L.csv` correspond to purge gaps g = L and g = 4L.
 - `adapter_latent` is the proposed configuration; `adapter_isca` is "Adapter + self-refine" in the paper.
-- Ties: |ΔAUROC| ≤ 1e-4.
+- Ties: |ΔAUROC| ≤ 1e-4 (implemented in `a1`/`a2`).
+- `a0_prepare_gains.py` applies the zero-removal fill rule above by default (`--no-fill-zero-overlap` disables it).
+- `results_rescored.csv` concatenates every `jobs_out/final/*/results.csv`, including smoke runs and re-runs of the same S2 cells (`*_leaked`). `code/clean_rows.py` keeps one row per S2 cell (main run with E2 > re-run with E2 > main run > re-run) and drops smoke rows; all S2 numbers (Tables 4–7, Fig. 3–4) use the cleaned file. S1 numbers use `core_results_seed15/` (single source; the 5-seed row of Table 12 is its seeds 0–4).
+- Raw score dumps: the E2 values of 573 of the 603 overlap-pair S1 cells were recomputed from the raw dumps with identical results. For 30 cells (Boiler_1to3, seeds 0–4) the dumps were overwritten by the later seed expansion; their stored values are kept.
+
+## Changes
+
+- **v9 (2026-11):** S2 duplicate/smoke rows removed before computing Tables 4–7 and Fig. 3–4 (`code/clean_rows.py`; tables of the v8 submission kept in `work/tables_final/v8_submitted/`); fill rule and tie threshold implemented in `a0`–`a2` so that the documented commands reproduce Tables 8, 13 and 14; `verify_paper_numbers.py` updated to the v9 values. Main conclusions are unchanged (e.g. full fine-tuning contamination slope on Boiler: E0 −0.312, E2 −0.002).
+- **v8:** initial release with the RESS submission.
 
 ## Data availability
 
